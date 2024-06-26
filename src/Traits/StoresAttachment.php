@@ -6,17 +6,19 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Laravel\Facades\Image;
 
 trait StoresAttachment
 {
     /**
      * Store attachment.
      *
-     * @param  \Illuminate\Http\UploadedFile $file
+     * @param  UploadedFile $file
+     * @param  int          $maxWidth
+     * @param  int          $maxHeight
      * @return array
      */
-    public function storeAttachment(UploadedFile $file)
+    public function storeAttachment(UploadedFile $file, $maxWidth = 1920, $maxHeight = 1920)
     {
         $attachmentsDir = config('attachment.attachments_dir');
         $name = $file->getClientOriginalName();
@@ -26,13 +28,11 @@ trait StoresAttachment
         $path = null;
         if (!App::environment('testing') && Str::startsWith($mime, 'image/')) {
             try {
-                $img = Image::make($file);
-                $img->resize(1920, 1920, function ($constraint) {
-                    $constraint->aspectRatio();
-                    $constraint->upsize();
-                });
+                $img = Image::read($file)
+                    ->scaleDown($maxWidth, $maxHeight)
+                    ->encodeByMediaType();
                 $path = $attachmentsDir.'/'.$filename;
-                Storage::put($path, $img->stream());
+                Storage::put($path, $img->toFilePointer());
             } catch (\Throwable $th) {
                 logger()->error($th->getMessage());
             }

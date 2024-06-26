@@ -4,11 +4,8 @@ namespace Karomap\LaravelAttachment;
 
 use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Collection;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
-use Karomap\LaravelAttachment\Models\Attachment;
-use Karomap\LaravelAttachment\Policies\AttachmentPolicy;
 
 class AttachmentServiceProvider extends ServiceProvider
 {
@@ -28,11 +25,6 @@ class AttachmentServiceProvider extends ServiceProvider
     public function register()
     {
         $this->mergeConfigFrom(__DIR__.'/../config/attachment.php', 'attachment');
-
-        // Register policies
-        $this->booting(function () {
-            Gate::policy(Attachment::class, AttachmentPolicy::class);
-        });
     }
 
     /**

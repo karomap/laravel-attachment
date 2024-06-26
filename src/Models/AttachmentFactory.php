@@ -5,7 +5,8 @@ namespace Karomap\LaravelAttachment\Models;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
-use Intervention\Image\Facades\Image;
+use Intervention\Image\Laravel\Facades\Image;
+use Intervention\Image\Typography\FontFactory;
 
 /**
  * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Karomap\LaravelAttachment\Models\Attachment>
@@ -24,7 +25,7 @@ class AttachmentFactory extends Factory
         $attachmentsDir = config('attachment.attachments_dir');
         $userClass = config('attachment.user_model');
         $name = $this->faker->unique()->words(2, true);
-        $filename = now()->format('YmdHis').'-'.Str::slug($name).'.png';
+        $filename = now()->format('YmdHis').'-'.Str::slug($name).'.webp';
         $path = $attachmentsDir.'/'.$filename;
         $mime = 'image/png';
         $size = $this->faker->randomNumber();
@@ -42,15 +43,17 @@ class AttachmentFactory extends Factory
     public function configure()
     {
         return $this->afterCreating(function (Attachment $model) {
-            $image = Image::canvas(800, 600, $this->faker->hexColor())
-                ->text($model->name, 400, 300, function ($font) {
+            $image = Image::create(800, 600)
+                ->fill($this->faker->hexColor())
+                ->text($model->name, 400, 300, function (FontFactory $font) {
                     $font->file(__DIR__.'/../fonts/Roboto_regular.ttf');
                     $font->size(64);
                     $font->align('center');
                     $font->valign('center');
                     $font->angle(40);
-                });
-            Storage::put($model->path, $image->stream());
+                })
+                ->toWebp();
+            Storage::put($model->path, $image->toFilePointer());
         });
     }
 
